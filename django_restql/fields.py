@@ -20,7 +20,7 @@ UPDATE_SUPPORTED_OPERATIONS = (ADD, CREATE, REMOVE, UPDATE)
 class DynamicSerializerMethodField(SerializerMethodField):
     def to_representation(self, value):
         method = getattr(self.parent, self.method_name)
-        if (hasattr(self.parent, "nested_fields") and 
+        if (hasattr(self.parent, "nested_fields") and
                 self.field_name in self.parent.nested_fields):
             query = self.parent.nested_fields[self.field_name]
         else:
@@ -74,7 +74,7 @@ def BaseNestedFieldSerializerFactory(
             ", ".join(UPDATE_SUPPORTED_OPERATIONS)
         )
         raise InvalidOperation(msg)
-    
+
     BaseClass = BaseReplaceableNestedField if accept_pk \
         else BaseWritableNestedField
 
@@ -96,7 +96,7 @@ def BaseNestedFieldSerializerFactory(
                 many=True
             )
             return validator.run_validation(pks)
-    
+
         def validate_data_list(self, data):
             ListField().run_validation(data)
             model = self.parent.Meta.model
@@ -130,16 +130,16 @@ def BaseNestedFieldSerializerFactory(
                 )
                 parent_serializer.is_valid(raise_exception=True)
             return parent_serializer.validated_data
-    
+
         def validate_add_list(self, data):
             return self.validate_pk_list(data)
 
         def validate_create_list(self, data):
             return self.validate_data_list(data)
-    
+
         def validate_remove_list(self, data):
             return self.validate_pk_list(data)
-    
+
         def validate_update_list(self, data):
             DictField().run_validation(data)
             pks = list(data.keys())
@@ -166,7 +166,7 @@ def BaseNestedFieldSerializerFactory(
                     op_list =list(map(wrap_quotes, create_ops))
                     msg = (
                         "`%s` is not a valid operation, valid operations "
-                        "for this request are %s" 
+                        "for this request are %s"
                         % (operation, ', '.join(op_list))
                     )
                     code = 'invalid_operation'
@@ -194,7 +194,7 @@ def BaseNestedFieldSerializerFactory(
                     op_list =list(map(wrap_quotes, update_ops))
                     msg = (
                         "`%s` is not a valid operation, valid operations "
-                        "for this request are %s" 
+                        "for this request are %s"
                         % (operation, ', '.join(op_list))
                     )
                     code='invalid_operation'
@@ -222,7 +222,7 @@ def BaseNestedFieldSerializerFactory(
 
         def __repr__(self):
             return (
-                "BaseNestedField(%s, many=True)" % 
+                "BaseNestedField(%s, many=True)" %
                 (serializer_class.__name__, )
             )
 
@@ -233,7 +233,7 @@ def BaseNestedFieldSerializerFactory(
         def run_validation(self, data):
             # Run `to_internal_value` only nothing more
             # This is needed only on DRF 3.8.x due to a bug on it
-            # This function can be removed on other supported DRF verions 
+            # This function can be removed on other supported DRF verions
             # i.e v3.7 v3.9 v3.10 doesn't need this function
             return self.to_internal_value(data)
 
@@ -263,7 +263,7 @@ def BaseNestedFieldSerializerFactory(
 
             if data == empty and self.is_partial:
                 return empty
-                
+
             if data == empty and required and default == empty:
                 raise ValidationError(
                     "This field is required.",
@@ -272,17 +272,15 @@ def BaseNestedFieldSerializerFactory(
             elif data == empty and required:
                 data = default
             elif data == empty and default == empty:
-                data = ""
-                
-            if data == "":
-                data = None
+                data = {}
+
             if accept_pk:
                 return self.validate_pk_based_nested(data)
             return self.validate_data_based_nested(data)
 
         def __repr__(self):
             return (
-                "BaseNestedField(%s, many=False)" % 
+                "BaseNestedField(%s, many=False)" %
                 (serializer_class.__name__, )
             )
 
@@ -305,7 +303,7 @@ def NestedFieldWraper(*args, **kwargs):
     # TODO: Find all non validation kwargs to remove(below are just few)
 
     # Remove non validation related kwargs from `valdation_kwargs`
-    non_validation_kwargs = ['many', 'data', 'instance', 'context']
+    non_validation_kwargs = ['many', 'data', 'instance', 'context', 'fields', 'exclude']
     for kwarg in non_validation_kwargs:
         if kwarg in serializer_validation_kwargs:
             serializer_validation_kwargs.pop(kwarg)
@@ -313,12 +311,12 @@ def NestedFieldWraper(*args, **kwargs):
     class NestedListSerializer(factory["list_serializer_class"]):
         def __repr__(self):
             return (
-                "NestedField(%s, many=False)" % 
+                "NestedField(%s, many=False)" %
                 (serializer_class.__name__, )
             )
-            
+
     class NestedSerializer(factory["serializer_class"]):
-        # set validation related kwargs to be used on 
+        # set validation related kwargs to be used on
         # `NestedCreateMixin` and `NestedUpdateMixin`
         validation_kwargs = serializer_validation_kwargs
         class Meta(factory["serializer_class"].Meta):
@@ -326,10 +324,10 @@ def NestedFieldWraper(*args, **kwargs):
 
         def __repr__(self):
             return (
-                "NestedField(%s, many=False)" % 
+                "NestedField(%s, many=False)" %
                 (serializer_class.__name__, )
             )
-  
+
     return NestedSerializer(
         *factory["args"],
         **factory["kwargs"]
